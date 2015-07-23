@@ -1,5 +1,7 @@
 package be.dabla.parallel.iterable;
 
+import static be.dabla.parallel.base.Functions.forFunction;
+import static be.dabla.parallel.base.Functions.forPredicate;
 import static com.google.common.base.Predicates.notNull;
 import static com.google.common.collect.Iterables.size;
 import static com.google.common.collect.Lists.newArrayList;
@@ -15,6 +17,9 @@ import java.util.concurrent.Semaphore;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
+
+import be.dabla.parallel.base.Callback;
+import be.dabla.parallel.base.Functions;
 
 public class ParallelIterable<TYPE> {
     private static ExecutorService executor = newCachedThreadPool();
@@ -56,8 +61,8 @@ public class ParallelIterable<TYPE> {
     
     public <RESULT> ParallelIterable<RESULT> transform(Function<? super TYPE,RESULT> function) {
         try {
-            List<Future<RESULT>> results = invokeAll(toTask(function));
-            return from(FluentIterable.from(results).transform(ParallelIterable.<RESULT>toResult()));
+            List<Future<RESULT>> results = invokeAll(forFunction(function, release()));
+            return from(FluentIterable.from(results).transform(Functions.<RESULT>forResult()));
             
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -66,8 +71,8 @@ public class ParallelIterable<TYPE> {
     
     public <RESULT,LIST extends List<RESULT>> ParallelIterable<RESULT> transformAndConcat(Function<? super TYPE,LIST> function) {
         try {
-            List<Future<LIST>> results = invokeAll(toTask(function));
-            return from(FluentIterable.from(results).transformAndConcat(ParallelIterable.<LIST>toResult()));
+            List<Future<LIST>> results = invokeAll(forFunction(function, release()));
+            return from(FluentIterable.from(results).transformAndConcat(Functions.<LIST>forResult()));
             
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -76,8 +81,8 @@ public class ParallelIterable<TYPE> {
     
     public ParallelIterable<TYPE> filter(Predicate<? super TYPE> predicate) {
         try {
-            List<Future<TYPE>> results = invokeAll(toTask(predicate));
-            return from(FluentIterable.from(results).transform(ParallelIterable.<TYPE>toResult()).filter(notNull()));
+            List<Future<TYPE>> results = invokeAll(forPredicate(predicate, release()));
+            return from(FluentIterable.from(results).transform(Functions.<TYPE>forResult()).filter(notNull()));
             
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -88,13 +93,17 @@ public class ParallelIterable<TYPE> {
         List<Future<RESULT>> results = newArrayList();
         
         for (TYPE element : elements) {
-            numberOfThreads.acquire();
-            results.add(executor.submit(function.apply(element)));
+            results.add(submit(function.apply(element)));
         }
         
         latch.await();
         
         return results;
+    }
+
+    private <RESULT> Future<RESULT> submit(Callable<RESULT> callable) throws InterruptedException {
+        numberOfThreads.acquire();
+        return executor.submit(callable);
     }
 
     public List<TYPE> toList() {
@@ -105,57 +114,14 @@ public class ParallelIterable<TYPE> {
         return FluentIterable.from(elements);
     }
 
-    private static <RESULT> Function<Future<RESULT>, RESULT> toResult() {
-        return new Function<Future<RESULT>, RESULT>() {
-            public RESULT apply(Future<RESULT> input) {
-                try {
-                    return input.get();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        };
-    }
-
-    private <RESULT> Function<TYPE, Callable<RESULT>> toTask(final Function<? super TYPE,RESULT> function) {
-        return new Function<TYPE, Callable<RESULT>>() {
-            public Callable<RESULT> apply(final TYPE input) {
-                return new Task<RESULT>() {
-                    public RESULT execute() throws Exception {
-                        return function.apply(input);
-                    }
-                };
-            }
-        };
-    }
-    
-    private Function<TYPE, Callable<TYPE>> toTask(final Predicate<? super TYPE> predicate) {
-        return new Function<TYPE, Callable<TYPE>>() {
-            public Callable<TYPE> apply(final TYPE input) {
-                return new Task<TYPE>() {
-                    public TYPE execute() throws Exception {
-                        if (predicate.apply(input)) {
-                            return input;
-                        }
-                        
-                        return null;
-                    }
-                };
-            }
-        };
-    }
-    
-    private abstract class Task<RESULT> implements Callable<RESULT> {
-        public RESULT call() throws Exception {
-            try {
-                return execute();
-            }
-            finally {
+    Callback<Void> release() {
+        return new Callback<Void>() {
+            public Void execute() {
                 numberOfThreads.release();
                 latch.countDown();
+                return null;
             }
-        }
-        
-        public abstract RESULT execute() throws Exception;
+            
+        };
     }
 }
