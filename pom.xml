@@ -56,4 +56,23 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+	
+	<scm>
+        <url>https://github.com/dabla/parallel-iterable</url>
+        <connection>scm:git:git://github.com/dabla/parallel-iterable.git</connection>
+        <developerConnection>scm:git:git@github.com/dabla/parallel-iterable.git</developerConnection>
+    </scm>
+
+    <issueManagement>
+        <url>https://github.com/dabla/parallel-iterable</url>
+    </issueManagement>
+
+    <developers>
+        <developer>
+            <email>info@dabla.be</email>
+            <name>David Blain</name>
+            <url>https://github.com/dabla</url>
+            <id>dabla</id>
+        </developer>
+    </developers>
 </project>
