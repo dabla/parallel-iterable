@@ -6,8 +6,11 @@
 	<version>1.0-SNAPSHOT</version>
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>parallel-iterable</artifactId>
-	<name>parallel-iterable</name>
 	<packaging>jar</packaging>
+	
+	<name>parallel-iterable</name>
+    <description>Guava alike concurrent FluentIterable</description>
+    <url>https://github.com/dabla/parallel-iterable</url>
 
 	<build>
 		<pluginManagement>
