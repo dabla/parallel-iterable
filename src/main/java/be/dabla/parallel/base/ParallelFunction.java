@@ -13,8 +13,10 @@ class ParallelFunction<TYPE, RESULT> implements Function<TYPE, Callable<RESULT>>
         this.callback = callback;
     }
     
+    @Override
     public Callable<RESULT> apply(final TYPE input) {
         return new Task<RESULT>(callback) {
+            @Override
             public RESULT execute() throws Exception {
                 return function.apply(input);
             }

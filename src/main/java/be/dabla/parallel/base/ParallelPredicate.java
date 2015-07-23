@@ -14,8 +14,10 @@ class ParallelPredicate<TYPE> implements Function<TYPE, Callable<TYPE>> {
         this.callback = callback;
     }
     
+    @Override
     public Callable<TYPE> apply(final TYPE input) {
         return new Task<TYPE>(callback) {
+            @Override
             public TYPE execute() throws Exception {
                 if (predicate.apply(input)) {
                     return input;

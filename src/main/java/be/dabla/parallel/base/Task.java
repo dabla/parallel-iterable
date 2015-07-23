@@ -10,6 +10,7 @@ abstract class Task<TYPE> implements Callable<TYPE> {
         this.callback = callback;
     }
     
+    @Override
     public TYPE call() throws Exception {
         try {
             return execute();
