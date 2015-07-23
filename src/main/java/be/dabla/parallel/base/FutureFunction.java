@@ -4,8 +4,8 @@ import java.util.concurrent.Future;
 
 import com.google.common.base.Function;
 
-class ResultFunction<TYPE> implements Function<Future<TYPE>, TYPE> {
-    ResultFunction() {}
+class FutureFunction<TYPE> implements Function<Future<TYPE>, TYPE> {
+    FutureFunction() {}
     
     public TYPE apply(Future<TYPE> input) {
         try {
