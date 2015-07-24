@@ -1,5 +1,6 @@
 package be.dabla.parallel.base;
 
+import java.text.MessageFormat;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
@@ -11,11 +12,11 @@ public class Functions {
         return new FutureFunction<TYPE>();
     }
     
-    public static <TYPE, RESULT> Function<TYPE, Callable<RESULT>> forFunction(Function<? super TYPE,RESULT> function, Callback<Void> callback) {
-        return new ParallelFunction<TYPE, RESULT>(function, callback);
+    public static <TYPE, RESULT> Function<TYPE, Callable<RESULT>> forFunction(Function<? super TYPE,RESULT> function, Callback<Void> callback, MessageFormat threadNamePattern) {
+        return new ParallelFunction<TYPE, RESULT>(function, callback, threadNamePattern);
     }
     
-    public static <TYPE> Function<TYPE, Callable<TYPE>> forPredicate(Predicate<? super TYPE> predicate, Callback<Void> callback) {
-        return new ParallelPredicate<TYPE>(predicate, callback);
+    public static <TYPE> Function<TYPE, Callable<TYPE>> forPredicate(Predicate<? super TYPE> predicate, Callback<Void> callback, MessageFormat threadNamePattern) {
+        return new ParallelPredicate<TYPE>(predicate, callback, threadNamePattern);
     }
 }

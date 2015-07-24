@@ -7,6 +7,7 @@ import static com.google.common.collect.Iterables.size;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -26,25 +27,33 @@ public class ParallelIterable<TYPE> {
     private final Iterable<TYPE> elements;
     private final CountDownLatch latch;
     private final Semaphore numberOfThreads;
+    private final MessageFormat threadNamePattern;
 
-    private ParallelIterable(Iterable<TYPE> elements, CountDownLatch latch, Semaphore numberOfThreads) {
+    private ParallelIterable(Iterable<TYPE> elements, CountDownLatch latch, Semaphore numberOfThreads, MessageFormat threadNamePattern) {
         this.elements = elements;
         this.latch = latch;
         this.numberOfThreads = numberOfThreads;
+		this.threadNamePattern = threadNamePattern;
     }
     
     public synchronized static <TYPE> ParallelIterableBuilder<TYPE> on(ExecutorService executor) {
         ParallelIterable.executor = executor;
+        return aParallelIterable();
+    }
+    
+    public static <TYPE> ParallelIterableBuilder<TYPE> aParallelIterable() {
         return new ParallelIterableBuilder<TYPE>();
     }
     
     public static <TYPE> ParallelIterable<TYPE> from(Iterable<TYPE> elements) {
-        return new ParallelIterableBuilder<TYPE>().from(elements);
+        return ParallelIterable.<TYPE>aParallelIterable().from(elements);
     }
     
     public static class ParallelIterableBuilder<TYPE> {
         public static final int DEFAULT_NUMBER_OF_THREADS = 5;
+		private static final String DEFAULT_THREAD_NAME_PATTERN = "ParallelIterable-{0}";
         private Semaphore numberOfThreads = new Semaphore(DEFAULT_NUMBER_OF_THREADS);
+		private final MessageFormat threadNamePattern = new MessageFormat(DEFAULT_THREAD_NAME_PATTERN);
         
         private ParallelIterableBuilder() {}
         
@@ -53,15 +62,20 @@ public class ParallelIterable<TYPE> {
             return this;
         }
         
+        public ParallelIterableBuilder<TYPE> threadNamePattern(String threadNamePattern) {
+            this.threadNamePattern.applyPattern(threadNamePattern);
+            return this;
+        }
+        
         public ParallelIterable<TYPE> from(Iterable<TYPE> elements) {
             final CountDownLatch latch = new CountDownLatch(size(elements));
-            return new ParallelIterable<TYPE>(elements, latch, numberOfThreads);
+            return new ParallelIterable<TYPE>(elements, latch, numberOfThreads, threadNamePattern);
         }
     }
     
     public <RESULT> ParallelIterable<RESULT> transform(Function<? super TYPE,RESULT> function) {
         try {
-            Function<TYPE, Callable<RESULT>> forFunction = forFunction(function, release());
+            Function<TYPE, Callable<RESULT>> forFunction = forFunction(function, release(), threadNamePattern);
             List<Future<RESULT>> results = invokeAll(forFunction);
             return from(FluentIterable.from(results).transform(Functions.<RESULT>forFuture()));
             
@@ -72,7 +86,7 @@ public class ParallelIterable<TYPE> {
     
     public <RESULT,LIST extends List<RESULT>> ParallelIterable<RESULT> transformAndConcat(Function<? super TYPE,LIST> function) {
         try {
-            Function<TYPE, Callable<LIST>> forFunction = forFunction(function, release());
+            Function<TYPE, Callable<LIST>> forFunction = forFunction(function, release(), threadNamePattern);
             List<Future<LIST>> results = invokeAll(forFunction);
             return from(FluentIterable.from(results).transformAndConcat(Functions.<LIST>forFuture()));
             
@@ -83,7 +97,7 @@ public class ParallelIterable<TYPE> {
     
     public ParallelIterable<TYPE> filter(Predicate<? super TYPE> predicate) {
         try {
-            Function<TYPE, Callable<TYPE>> forPredicate = forPredicate(predicate, release());
+            Function<TYPE, Callable<TYPE>> forPredicate = forPredicate(predicate, release(), threadNamePattern);
             List<Future<TYPE>> results = invokeAll(forPredicate);
             return from(FluentIterable.from(results).transform(Functions.<TYPE>forFuture()).filter(notNull()));
             
@@ -124,7 +138,6 @@ public class ParallelIterable<TYPE> {
                 latch.countDown();
                 return null;
             }
-            
         };
     }
 }

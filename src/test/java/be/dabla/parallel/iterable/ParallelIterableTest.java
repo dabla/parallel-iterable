@@ -29,11 +29,13 @@ public class ParallelIterableTest {
     
     @Test
     public void transformAndConcat() {
-        List<BigInteger> actual = ParallelIterable.from(newArrayList(ZERO, ONE))
-                                                  .transformAndConcat(addOnes())
+        List<BigInteger> actual = ParallelIterable.<BigInteger>aParallelIterable()
+        										  .threadNamePattern("BigInteger-{0}")
+        										  .from(newArrayList(ZERO, ONE))
+                                                  .transformAndConcat(addMultipleOnes())
                                                   .toList();
         
-        assertThat(actual).containsExactly(valueOf(1), valueOf(2));
+        assertThat(actual).containsExactly(valueOf(1), valueOf(1), valueOf(2), valueOf(2));
     }
     
     @Test
@@ -53,10 +55,10 @@ public class ParallelIterableTest {
         };
     }
     
-    private Function<BigInteger, List<BigInteger>> addOnes() {
+    private Function<BigInteger, List<BigInteger>> addMultipleOnes() {
         return new Function<BigInteger, List<BigInteger>>() {
             public List<BigInteger> apply(BigInteger input) {
-                return newArrayList(input.add(ONE));
+                return newArrayList(input.add(ONE), input.add(ONE));
             }
         };
     }
