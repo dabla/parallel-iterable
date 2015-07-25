@@ -7,22 +7,21 @@ The transformation or filtering of each element will be done concurrently behind
 ```java
 package be.dabla.parallel.iterable;
 
-import static com.google.common.base.Predicates.notNull;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.math.BigInteger.ONE;
 import static java.math.BigInteger.ZERO;
 
 import java.math.BigInteger;
+import java.util.List;
 
 import com.google.common.base.Function;
 
-public class ParallelIterableTest2 {
+public class Sample {
     
-    public void transform() {
-        ParallelIterable.from(newArrayList(ZERO, ONE))
-                        .transform(addOne())
-                        .filter(notNull())
-                        .toList();
+    public List<BigInteger> incrementAllByOne() {
+        return ParallelIterable.from(newArrayList(ZERO, ONE))
+                        	   .transform(addOne())
+                        	   .toList();
     }
     
     private Function<BigInteger, BigInteger> addOne() {
