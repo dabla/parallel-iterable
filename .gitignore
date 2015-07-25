@@ -10,3 +10,6 @@ target
 # intellij
 .idea
 *.iml
+
+# mac
+.DS_Store
