@@ -12,6 +12,13 @@
     <description>Guava alike concurrent FluentIterable</description>
     <url>https://github.com/dabla/parallel-iterable</url>
     
+    <licenses>
+        <license>
+            <name>GNU General Public License (GPL)</name>
+            <url>http://www.gnu.org/licenses/gpl.txt</url>
+        </license>
+    </licenses>
+    
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
