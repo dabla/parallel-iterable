@@ -155,7 +155,7 @@
 	</dependencies>
 	
 	<scm>
-        <url>scm:git:git://github.com/dabla/parallel-iterable.git</url>
+        <url>https://github.com/dabla/parallel-iterable</url>
         <connection>scm:git:git://github.com/dabla/parallel-iterable.git</connection>
         <developerConnection>scm:git:git@github.com/dabla/parallel-iterable.git</developerConnection>
     </scm>
