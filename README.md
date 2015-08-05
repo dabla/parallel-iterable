@@ -44,3 +44,4 @@ Example for Maven:
     <version>1.1</version>
 </dependency>
 ```
+Maven artifact can be found at [https://oss.sonatype.org/content/repositories/public/be/dabla/parallel-iterable](https://oss.sonatype.org/content/repositories/public/be/dabla/parallel-iterable)
