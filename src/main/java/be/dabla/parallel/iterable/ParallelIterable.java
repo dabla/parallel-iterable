@@ -76,7 +76,7 @@ public class ParallelIterable<TYPE> {
     public <RESULT> ParallelIterable<RESULT> transform(Function<? super TYPE,RESULT> function) {
         try {
             Function<TYPE, Callable<RESULT>> forFunction = forFunction(function, release(), threadNamePattern);
-            List<Future<RESULT>> results = invokeAll(forFunction);
+            Iterable<Future<RESULT>> results = invokeAll(forFunction);
             return from(FluentIterable.from(results).transform(Functions.<RESULT>forFuture()));
             
         } catch (InterruptedException e) {
@@ -84,11 +84,11 @@ public class ParallelIterable<TYPE> {
         }
     }
     
-    public <RESULT,LIST extends List<RESULT>> ParallelIterable<RESULT> transformAndConcat(Function<? super TYPE,LIST> function) {
+    public <RESULT,ITERABLE extends Iterable<RESULT>> ParallelIterable<RESULT> transformAndConcat(Function<? super TYPE,ITERABLE> function) {
         try {
-            Function<TYPE, Callable<LIST>> forFunction = forFunction(function, release(), threadNamePattern);
-            List<Future<LIST>> results = invokeAll(forFunction);
-            return from(FluentIterable.from(results).transformAndConcat(Functions.<LIST>forFuture()));
+            Function<TYPE, Callable<ITERABLE>> forFunction = forFunction(function, release(), threadNamePattern);
+            Iterable<Future<ITERABLE>> results = invokeAll(forFunction);
+            return from(FluentIterable.from(results).transformAndConcat(Functions.<ITERABLE>forFuture()));
             
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -98,7 +98,7 @@ public class ParallelIterable<TYPE> {
     public ParallelIterable<TYPE> filter(Predicate<? super TYPE> predicate) {
         try {
             Function<TYPE, Callable<TYPE>> forPredicate = forPredicate(predicate, release(), threadNamePattern);
-            List<Future<TYPE>> results = invokeAll(forPredicate);
+            Iterable<Future<TYPE>> results = invokeAll(forPredicate);
             return from(FluentIterable.from(results).transform(Functions.<TYPE>forFuture()).filter(notNull()));
             
         } catch (InterruptedException e) {
@@ -106,7 +106,7 @@ public class ParallelIterable<TYPE> {
         }
     }
     
-    private <RESULT> List<Future<RESULT>> invokeAll(Function<TYPE, Callable<RESULT>> function) throws InterruptedException {
+    private <RESULT> Iterable<Future<RESULT>> invokeAll(Function<TYPE, Callable<RESULT>> function) throws InterruptedException {
         List<Future<RESULT>> results = newArrayList();
         
         for (TYPE element : elements) {
