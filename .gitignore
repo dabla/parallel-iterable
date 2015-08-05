@@ -1,6 +1,8 @@
 target
 *.class
 *.jar
+pom.xml.releaseBackup
+release.properties
 
 # eclipse
 .project
