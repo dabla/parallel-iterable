@@ -5,7 +5,8 @@ import static be.dabla.parallel.base.Functions.forPredicate;
 import static com.google.common.base.Predicates.notNull;
 import static com.google.common.collect.Iterables.size;
 import static com.google.common.collect.Lists.newArrayList;
-import static java.util.concurrent.Executors.newCachedThreadPool;
+import static java.lang.Runtime.getRuntime;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 
 import java.text.MessageFormat;
 import java.util.List;
@@ -23,7 +24,7 @@ import be.dabla.parallel.base.Callback;
 import be.dabla.parallel.base.Functions;
 
 public class ParallelIterable<TYPE> {
-    private static ExecutorService executor = newCachedThreadPool();
+    private static ExecutorService executor = newFixedThreadPool(getRuntime().availableProcessors());
     private final Iterable<TYPE> elements;
     private final CountDownLatch latch;
     private final Semaphore numberOfThreads;
@@ -36,7 +37,7 @@ public class ParallelIterable<TYPE> {
 		this.threadNamePattern = threadNamePattern;
     }
     
-    public synchronized static <TYPE> ParallelIterableBuilder<TYPE> on(ExecutorService executor) {
+    public synchronized static <TYPE> ParallelIterableBuilder<TYPE> using(ExecutorService executor) {
         ParallelIterable.executor = executor;
         return aParallelIterable();
     }

@@ -19,7 +19,7 @@ public class ParallelIterableTest {
     
     @Test
     public void transform() {
-        List<BigInteger> actual = ParallelIterable.<BigInteger>on(newCachedThreadPool())
+        List<BigInteger> actual = ParallelIterable.<BigInteger>using(newCachedThreadPool())
                                                   .from(newArrayList(ZERO, ONE))
                                                   .transform(addOne())
                                                   .toList();
