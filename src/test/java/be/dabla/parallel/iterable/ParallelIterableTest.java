@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.Test;
 
@@ -19,10 +20,10 @@ public class ParallelIterableTest {
     
     @Test
     public void transform() {
-        List<BigInteger> actual = ParallelIterable.<BigInteger>using(newCachedThreadPool())
-                                                  .from(newArrayList(ZERO, ONE))
-                                                  .transform(addOne())
-                                                  .toList();
+        Set<BigInteger> actual = ParallelIterable.<BigInteger>defaultExecutor(newCachedThreadPool())
+                                                 .from(newArrayList(ZERO, ZERO, ONE))
+                                                 .transform(addOne())
+                                                 .toSet();
         
         assertThat(actual).containsExactly(valueOf(1), valueOf(2));
     }
@@ -40,7 +41,9 @@ public class ParallelIterableTest {
     
     @Test
     public void filter() {
-        List<BigInteger> actual = ParallelIterable.from(newArrayList(ZERO, null, ONE))
+        List<BigInteger> actual = ParallelIterable.<BigInteger>aParallelIterable()
+        										  .using(newCachedThreadPool())
+        										  .from(newArrayList(ZERO, null, ONE))
                                                   .filter(notNull())
                                                   .toList();
         

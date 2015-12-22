@@ -5,40 +5,44 @@ import static be.dabla.parallel.base.Functions.forPredicate;
 import static com.google.common.base.Predicates.notNull;
 import static com.google.common.collect.Iterables.size;
 import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.Runtime.getRuntime;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 
 import java.text.MessageFormat;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
+import be.dabla.parallel.base.Callback;
+import be.dabla.parallel.base.Functions;
+
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 
-import be.dabla.parallel.base.Callback;
-import be.dabla.parallel.base.Functions;
-
 public class ParallelIterable<TYPE> {
-    private static ExecutorService executor = newFixedThreadPool(getRuntime().availableProcessors());
+    private static ExecutorService defaultExecutor = newFixedThreadPool(getRuntime().availableProcessors());
+    private final ExecutorService executor;
     private final Iterable<TYPE> elements;
     private final CountDownLatch latch;
     private final Semaphore numberOfThreads;
     private final MessageFormat threadNamePattern;
 
-    private ParallelIterable(Iterable<TYPE> elements, CountDownLatch latch, Semaphore numberOfThreads, MessageFormat threadNamePattern) {
-        this.elements = elements;
+    private ParallelIterable(ExecutorService executor, Iterable<TYPE> elements, CountDownLatch latch, Semaphore numberOfThreads, MessageFormat threadNamePattern) {
+        this.executor = executor;
+		this.elements = elements;
         this.latch = latch;
         this.numberOfThreads = numberOfThreads;
 		this.threadNamePattern = threadNamePattern;
     }
     
-    public synchronized static <TYPE> ParallelIterableBuilder<TYPE> using(ExecutorService executor) {
-        ParallelIterable.executor = executor;
+    public synchronized static <TYPE> ParallelIterableBuilder<TYPE> defaultExecutor(ExecutorService defaultExecutor) {
+        ParallelIterable.defaultExecutor = defaultExecutor;
         return aParallelIterable();
     }
     
@@ -53,10 +57,16 @@ public class ParallelIterable<TYPE> {
     public static class ParallelIterableBuilder<TYPE> {
         public static final int DEFAULT_NUMBER_OF_THREADS = 5;
 		private static final String DEFAULT_THREAD_NAME_PATTERN = "ParallelIterable-{0}";
+		private ExecutorService executor;
         private Semaphore numberOfThreads = new Semaphore(DEFAULT_NUMBER_OF_THREADS);
 		private final MessageFormat threadNamePattern = new MessageFormat(DEFAULT_THREAD_NAME_PATTERN);
         
         private ParallelIterableBuilder() {}
+        
+        public ParallelIterableBuilder<TYPE> using(ExecutorService executor) {
+            this.executor = executor;
+            return this;
+        }
         
         public ParallelIterableBuilder<TYPE> numberOfThreads(int numberOfThreads) {
             this.numberOfThreads = new Semaphore(numberOfThreads);
@@ -70,7 +80,7 @@ public class ParallelIterable<TYPE> {
         
         public ParallelIterable<TYPE> from(Iterable<TYPE> elements) {
             final CountDownLatch latch = new CountDownLatch(size(elements));
-            return new ParallelIterable<TYPE>(elements, latch, numberOfThreads, threadNamePattern);
+            return new ParallelIterable<TYPE>(executor != null ? executor : defaultExecutor, elements, latch, numberOfThreads, threadNamePattern);
         }
     }
     
@@ -126,6 +136,10 @@ public class ParallelIterable<TYPE> {
 
     public List<TYPE> toList() {
         return newArrayList(elements);
+    }
+    
+    public Set<TYPE> toSet() {
+        return newHashSet(elements);
     }
     
     public FluentIterable<TYPE> toFluentIterable() {
