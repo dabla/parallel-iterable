@@ -155,9 +155,9 @@
 	<scm>
         <url>https://github.com/dabla/parallel-iterable</url>
         <connection>scm:git:https://github.com/dabla/parallel-iterable.git</connection>
-        <developerConnection>scm:git:git@github.com:dabla/parallel-iterable.git</developerConnection>
-      <tag>HEAD</tag>
-  </scm>
+        <developerConnection>scm:git:https://github.com/dabla/parallel-iterable.git</developerConnection>
+		<tag>HEAD</tag>
+	</scm>
 
     <issueManagement>
         <url>https://github.com/dabla/parallel-iterable</url>
