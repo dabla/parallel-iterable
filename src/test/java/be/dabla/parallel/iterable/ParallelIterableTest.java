@@ -41,11 +41,10 @@ public class ParallelIterableTest {
     
     @Test
     public void filter() {
-        List<BigInteger> actual = ParallelIterable.<BigInteger>aParallelIterable()
-        										  .using(newCachedThreadPool())
-        										  .from(newArrayList(ZERO, null, ONE))
-                                                  .filter(notNull())
-                                                  .toList();
+        Iterable<BigInteger> actual = ParallelIterable.<BigInteger>aParallelIterable()
+        										  	  .using(newCachedThreadPool())
+        										  	  .from(newArrayList(ZERO, null, ONE))
+        										  	  .filter(notNull());
         
         assertThat(actual).containsExactly(ZERO, ONE);
     }

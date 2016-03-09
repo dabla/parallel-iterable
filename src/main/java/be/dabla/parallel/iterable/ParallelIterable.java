@@ -10,6 +10,7 @@ import static java.lang.Runtime.getRuntime;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 
 import java.text.MessageFormat;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -25,7 +26,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 
-public class ParallelIterable<TYPE> {
+public class ParallelIterable<TYPE> implements Iterable<TYPE> {
     private static ExecutorService defaultExecutor = newFixedThreadPool(getRuntime().availableProcessors());
     private final ExecutorService executor;
     private final Iterable<TYPE> elements;
@@ -155,4 +156,9 @@ public class ParallelIterable<TYPE> {
             }
         };
     }
+    
+    @Override
+	public Iterator<TYPE> iterator() {
+		return toList().iterator();
+	}
 }
