@@ -41,7 +41,7 @@ Example for Maven:
 <dependency>
     <groupId>be.dabla</groupId>
     <artifactId>parallel-iterable</artifactId>
-    <version>1.1</version>
+    <version>1.3</version>
 </dependency>
 ```
 Maven artifact can be found at [https://oss.sonatype.org/content/repositories/public/be/dabla/parallel-iterable](https://oss.sonatype.org/content/repositories/public/be/dabla/parallel-iterable)
