@@ -1,4 +1,6 @@
 # Parallel-Iterable
+[![Build Status](https://travis-ci.org/dabla/parallel-iterable.svg?branch=master)](https://travis-ci.org/dabla/parallel-iterable)
+
 ## Transform or filter collections concurrently
 Just use the ParallelIterable like you would use the FluentIterable in Guava.
 The transformation or filtering of each element will be done concurrently behind the scenes.
