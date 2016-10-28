@@ -6,7 +6,6 @@ import static java.math.BigInteger.ONE;
 import static java.math.BigInteger.ZERO;
 import static java.math.BigInteger.valueOf;
 import static java.util.concurrent.Executors.newCachedThreadPool;
-import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigInteger;
@@ -15,7 +14,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import org.junit.Test;import org.openjdk.jmh.annotations.BenchmarkMode;
+
+import org.junit.Test;
+import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.GenerateMicroBenchmark;
 import org.openjdk.jmh.annotations.Measurement;
@@ -29,6 +30,7 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
+
 import com.google.common.base.Function;
 
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
