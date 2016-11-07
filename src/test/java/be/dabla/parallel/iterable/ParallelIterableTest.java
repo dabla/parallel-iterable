@@ -5,12 +5,12 @@ import static com.google.common.collect.Lists.newArrayList;
 import static java.math.BigInteger.ONE;
 import static java.math.BigInteger.ZERO;
 import static java.math.BigInteger.valueOf;
+import static java.util.Collections.singletonList;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +33,8 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import com.google.common.base.Function;
 
+import be.dabla.parallel.base.ExceptionHandler;
+
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @BenchmarkMode(Mode.AverageTime)
 @OperationsPerInvocation
@@ -54,7 +56,7 @@ public class ParallelIterableTest {
     @GenerateMicroBenchmark
     public void transform() throws InterruptedException {
         Set<BigInteger> actual = ParallelIterable.<BigInteger>defaultExecutor(newCachedThreadPool())
-                .from(newArrayList(ZERO, ZERO, ONE))
+                								 .from(newArrayList(ZERO, ZERO, ONE))
                                                  .transform(addOne())
                                                  .toSet();
 
@@ -77,37 +79,58 @@ public class ParallelIterableTest {
     @GenerateMicroBenchmark
     public void filter() {
         List<BigInteger> actual = ParallelIterable.<BigInteger>aParallelIterable()
-                .using(newCachedThreadPool())
-                .from(newArrayList(ZERO, null, ONE))
-                .filter(notNull())
-                .toList();
+                								  .using(newCachedThreadPool())
+                								  .handler(consumingExceptionHandler())
+                								  .from(newArrayList(ZERO, null, ONE))
+                								  .transform(addOne())
+                								  .filter(notNull())
+                								  .toList();
 
-        assertThat(actual).containsExactly(ZERO, ONE);
+        assertThat(actual).containsExactly(valueOf(1), valueOf(2));
+    }
+    
+    @Test(expected=RuntimeException.class)
+    @GenerateMicroBenchmark
+    public void filter_whenExceptionOccurs() {
+        ParallelIterable.<BigInteger>aParallelIterable()
+					    .using(newCachedThreadPool())
+                		.from(newArrayList(ZERO, null, ONE))
+                		.transform(addOne())
+                		.filter(notNull())
+                		.toList();
     }
 
-    @Test
+	@Test
     @GenerateMicroBenchmark
-    public void transformTestNullFiltering() {
+    public void transform_whenNullFiltering() {
         ArrayList<BigInteger> elements = newArrayList(ZERO, ONE);
         List<BigInteger> actual =  ParallelIterable.<BigInteger>aParallelIterable()
-                .from(elements).transformAndConcat(transformAndOccasionallyReturnNull())
-                .toList();
+                								   .from(elements)
+                								   .transformAndConcat(transformAndOccasionallyReturnNull())
+                								   .toList();
 
         assertThat(actual).containsExactly(valueOf(1));
     }
+	
+	private static ExceptionHandler consumingExceptionHandler() {
+		return new ExceptionHandler() {
+			@Override
+			public void handle(Exception e) {
+				e.printStackTrace();
+			}
+		};
+	}
 
-    public Function<BigInteger, List<BigInteger>> transformAndOccasionallyReturnNull() {
+    public static Function<BigInteger, List<BigInteger>> transformAndOccasionallyReturnNull() {
         return new Function<BigInteger, List<BigInteger>>() {
-
             @Override
             public List<BigInteger> apply(BigInteger input) {
-                return Arrays.asList(input.compareTo(ONE) == 0 ? null : input.add(ONE));
+                return singletonList(input.compareTo(ONE) == 0 ? null : input.add(ONE));
             }
-
         };
     }
 
-    private Function<BigInteger, BigInteger> addOne() {
+    private static Function<BigInteger, BigInteger> addOne() {
         return new Function<BigInteger, BigInteger>() {
             public BigInteger apply(BigInteger input) {
                 return input.add(ONE);
@@ -115,7 +138,7 @@ public class ParallelIterableTest {
         };
     }
     
-    private Function<BigInteger, List<BigInteger>> addMultipleOnes() {
+    private static Function<BigInteger, List<BigInteger>> addMultipleOnes() {
         return new Function<BigInteger, List<BigInteger>>() {
             public List<BigInteger> apply(BigInteger input) {
                 return newArrayList(input.add(ONE), input.add(ONE));

@@ -7,11 +7,13 @@ import java.util.concurrent.Callable;
 
 abstract class Task<TYPE> implements Callable<TYPE> {
     
+	private final ExceptionHandler exceptionHandler;
     private final Callback<Void> callback;
     private final MessageFormat messageFormat;
 
-    Task(Callback<Void> callback, MessageFormat messageFormat) {
-        this.callback = callback;
+    Task(ExceptionHandler exceptionHandler, Callback<Void> callback, MessageFormat messageFormat) {
+        this.exceptionHandler = exceptionHandler;
+		this.callback = callback;
 		this.messageFormat = messageFormat;
     }
     
@@ -22,6 +24,10 @@ abstract class Task<TYPE> implements Callable<TYPE> {
         try {
         	currentThread().setName(threadName());
             return execute();
+        }
+        catch(Exception e) {
+        	exceptionHandler.handle(e);
+        	return null;
         }
         finally {
             callback.execute();

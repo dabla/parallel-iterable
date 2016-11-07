@@ -19,23 +19,32 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
-import be.dabla.parallel.base.Callback;
-import be.dabla.parallel.base.Functions;
-
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 
+import be.dabla.parallel.base.Callback;
+import be.dabla.parallel.base.ExceptionHandler;
+import be.dabla.parallel.base.Functions;
+
 public class ParallelIterable<TYPE> implements Iterable<TYPE> {
     private static ExecutorService defaultExecutor = newFixedThreadPool(getRuntime().availableProcessors());
+    private static ExceptionHandler defaultExceptionHandler = new DefaultExceptionHandler();
     private final ExecutorService executor;
+    private final ExceptionHandler exceptionHandler;
     private final Iterable<TYPE> elements;
     private final CountDownLatch latch;
     private final Semaphore numberOfThreads;
     private final MessageFormat threadNamePattern;
 
-    private ParallelIterable(ExecutorService executor, Iterable<TYPE> elements, CountDownLatch latch, Semaphore numberOfThreads, MessageFormat threadNamePattern) {
+    private ParallelIterable(ExecutorService executor,
+    						 ExceptionHandler exceptionHandler,
+    						 Iterable<TYPE> elements,
+    						 CountDownLatch latch,
+    						 Semaphore numberOfThreads,
+    						 MessageFormat threadNamePattern) {
         this.executor = executor;
+		this.exceptionHandler = exceptionHandler;
 		this.elements = elements;
         this.latch = latch;
         this.numberOfThreads = numberOfThreads;
@@ -44,6 +53,11 @@ public class ParallelIterable<TYPE> implements Iterable<TYPE> {
     
     public synchronized static <TYPE> ParallelIterableBuilder<TYPE> defaultExecutor(ExecutorService defaultExecutor) {
         ParallelIterable.defaultExecutor = defaultExecutor;
+        return aParallelIterable();
+    }
+    
+    public synchronized static <TYPE> ParallelIterableBuilder<TYPE> defaultExceptionHandler(ExceptionHandler exceptionHandler) {
+        ParallelIterable.defaultExceptionHandler = exceptionHandler;
         return aParallelIterable();
     }
     
@@ -59,6 +73,7 @@ public class ParallelIterable<TYPE> implements Iterable<TYPE> {
         public static final int DEFAULT_NUMBER_OF_THREADS = 5;
 		private static final String DEFAULT_THREAD_NAME_PATTERN = "ParallelIterable-{0}";
 		private ExecutorService executor;
+		private ExceptionHandler exceptionHandler;
         private Semaphore numberOfThreads = new Semaphore(DEFAULT_NUMBER_OF_THREADS);
 		private final MessageFormat threadNamePattern = new MessageFormat(DEFAULT_THREAD_NAME_PATTERN);
         
@@ -66,6 +81,11 @@ public class ParallelIterable<TYPE> implements Iterable<TYPE> {
         
         public ParallelIterableBuilder<TYPE> using(ExecutorService executor) {
             this.executor = executor;
+            return this;
+        }
+        
+        public ParallelIterableBuilder<TYPE> handler(ExceptionHandler exceptionHandler) {
+            this.exceptionHandler = exceptionHandler;
             return this;
         }
         
@@ -82,15 +102,16 @@ public class ParallelIterable<TYPE> implements Iterable<TYPE> {
         public ParallelIterable<TYPE> from(Iterable<TYPE> elements) {
             final CountDownLatch latch = new CountDownLatch(size(elements));
             ExecutorService executor = this.executor != null ? this.executor : defaultExecutor;
-            return new ParallelIterable<TYPE>(executor, elements, latch, numberOfThreads, threadNamePattern);
+            ExceptionHandler exceptionHandler = this.exceptionHandler != null ? this.exceptionHandler : defaultExceptionHandler;
+            return new ParallelIterable<TYPE>(executor, exceptionHandler, elements, latch, numberOfThreads, threadNamePattern);
         }
     }
     
     public <RESULT> FluentIterable<RESULT> transform(Function<? super TYPE, RESULT> function) {
         try {
-            Function<TYPE, Callable<RESULT>> forFunction = forFunction(function, release(), threadNamePattern);
+            Function<TYPE, Callable<RESULT>> forFunction = forFunction(function, exceptionHandler, release(), threadNamePattern);
             Iterable<Future<RESULT>> results = invokeAll(forFunction);
-            return FluentIterable.from(results).transform(Functions.<RESULT>forFuture()).filter(notNull());
+            return FluentIterable.from(results).transform(Functions.<RESULT>forFuture(exceptionHandler)).filter(notNull());
             
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -99,9 +120,9 @@ public class ParallelIterable<TYPE> implements Iterable<TYPE> {
 
     public <RESULT,ITERABLE extends Iterable<RESULT>> FluentIterable<RESULT> transformAndConcat(Function<? super TYPE,ITERABLE> function) {
         try {
-            Function<TYPE, Callable<ITERABLE>> forFunction = forFunction(function, release(), threadNamePattern);
+            Function<TYPE, Callable<ITERABLE>> forFunction = forFunction(function, exceptionHandler, release(), threadNamePattern);
             Iterable<Future<ITERABLE>> results = invokeAll(forFunction);
-            return FluentIterable.from(results).transformAndConcat(Functions.<ITERABLE>forFuture()).filter(notNull());
+            return FluentIterable.from(results).transformAndConcat(Functions.<ITERABLE>forFuture(exceptionHandler)).filter(notNull());
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -109,9 +130,9 @@ public class ParallelIterable<TYPE> implements Iterable<TYPE> {
 
     public FluentIterable<TYPE> filter(Predicate<? super TYPE> predicate) {
         try {
-            Function<TYPE, Callable<TYPE>> forPredicate = forPredicate(predicate, release(), threadNamePattern);
+            Function<TYPE, Callable<TYPE>> forPredicate = forPredicate(predicate, exceptionHandler, release(), threadNamePattern);
             Iterable<Future<TYPE>> results = invokeAll(forPredicate);
-            return FluentIterable.from(results).transform(Functions.<TYPE>forFuture()).filter(notNull());
+            return FluentIterable.from(results).transform(Functions.<TYPE>forFuture(exceptionHandler)).filter(notNull());
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -156,4 +177,13 @@ public class ParallelIterable<TYPE> implements Iterable<TYPE> {
 	public Iterator<TYPE> iterator() {
 		return toList().iterator();
 	}
+    
+    private static final class DefaultExceptionHandler implements ExceptionHandler {
+    	private DefaultExceptionHandler() {}
+    	
+    	@Override
+    	public void handle(Exception e) {
+    		throw new RuntimeException(e);
+    	}
+    }
 }
