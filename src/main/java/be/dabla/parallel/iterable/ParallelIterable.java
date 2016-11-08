@@ -112,7 +112,6 @@ public class ParallelIterable<TYPE> implements Iterable<TYPE> {
             Function<TYPE, Callable<RESULT>> forFunction = forFunction(function, exceptionHandler, release(), threadNamePattern);
             Iterable<Future<RESULT>> results = invokeAll(forFunction);
             return FluentIterable.from(results).transform(Functions.<RESULT>forFuture(exceptionHandler)).filter(notNull());
-            
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
