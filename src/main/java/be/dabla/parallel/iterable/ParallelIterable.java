@@ -8,6 +8,7 @@ import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.Runtime.getRuntime;
 import static java.util.concurrent.Executors.newFixedThreadPool;
+import static org.slf4j.LoggerFactory.getLogger;
 
 import java.text.MessageFormat;
 import java.util.Iterator;
@@ -18,6 +19,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
+
+import org.slf4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -178,10 +181,12 @@ public class ParallelIterable<TYPE> implements Iterable<TYPE> {
 	}
     
     private static final class DefaultExceptionHandler implements ExceptionHandler {
+    	private static final Logger LOGGER = getLogger(DefaultExceptionHandler.class);
     	private DefaultExceptionHandler() {}
     	
     	@Override
     	public void handle(Exception e) {
+    		LOGGER.error(e.getMessage(), e);
     		throw new RuntimeException(e);
     	}
     }
